@@ -326,6 +326,8 @@ Cada uma deve conter as configurações básicas de pagamento:
 - Escolha padrão do número parcelas que vai aparecer no formulário
 - Número máximo de parcelas sem juros
 - Taxa de juros
+- Porcetagem de desconto no boleto
+- Porcetagem de desconto no cartão de crédito à vista (1x)
 - Método de pagamento: Cartão, Boleto ou ambos.
 
 Segue o exemplo:
