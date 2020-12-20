@@ -23,7 +23,7 @@ def show_pagarme(payment_item: PagarmeItemConfig, customer: dict = None, address
     }
 
 
-def interest_rate(value):
+def rate_format(value):
     try:
         value = float(value)
     except ValueError:
@@ -42,5 +42,5 @@ def cents_to_brl(value):
         return f'R$ {value:,.2f}'.replace('.', '@').replace(',', '.').replace('@', ',')
 
 
-register.filter('interest_rate', interest_rate)
+register.filter('rate_format', rate_format)
 register.filter('cents_to_brl', cents_to_brl)

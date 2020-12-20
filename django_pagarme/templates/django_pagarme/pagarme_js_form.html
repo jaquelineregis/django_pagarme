@@ -34,7 +34,9 @@
             maxInstallments: {{payment_item.default_config.max_installments}},
             defaultInstallment: {{payment_item.default_config.default_installment}},
             freeInstallments: {{payment_item.default_config.free_installment}},
-            interestRate: {{payment_item.default_config.interest_rate|interest_rate}},
+            interestRate: {{payment_item.default_config.interest_rate|rate_format}},
+            boletoDiscountPercentage: {{payment_item.default_config.boleto_discount_percentage|rate_format}},
+            creditCardDiscountPercentage: {{payment_item.default_config.credit_card_discount_percentage|rate_format}},
             items: [
                 {
                     id: '{{payment_item.slug}}',

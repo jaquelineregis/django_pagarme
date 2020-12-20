@@ -21,6 +21,8 @@ class PagarmeFormConfig(models.Model):
     default_installment = models.IntegerField(default=1, validators=one_year_installments_validators)
     free_installment = models.IntegerField(default=1, validators=one_year_installments_validators)
     interest_rate = models.FloatField(default=0, validators=[MinValueValidator(0)])
+    boleto_discount_percentage = models.FloatField(default=0, validators=[MinValueValidator(0)])
+    credit_card_discount_percentage = models.FloatField(default=0, validators=[MinValueValidator(0)])
     payments_methods = models.CharField(
         max_length=len('credit_card,boleto'),
         choices=[
@@ -55,6 +57,14 @@ class PagarmeFormConfig(models.Model):
 
     def max_installment_amount_after_interest(self, amount: int) -> int:
         return self.max_amount_after_interest(amount) // self.max_installments
+
+    def max_amount_after_boleto_or_credit_card_discount(self, amount: int, payment_method: str) -> int:
+        discount = self.credit_card_discount_percentage
+        if payment_method.lower() == "boleto":
+            discount = self.boleto_discount_percentage
+        if discount:
+            return ceil(amount * (1 - discount / 100))
+        return amount
 
     def payment_plans(self, amount: int) -> GeneratorType:
         """
@@ -193,18 +203,22 @@ class PagarmePayment(models.Model):
         current_status = pagarme_json['status']
         if current_status == REFUSED:
             return payment, all_payments_items
+
         item_prices_sum = sum(payment_item.price for payment_item in all_payments_items)
+        item_prices_sum_with_discount = payment_config.max_amount_after_boleto_or_credit_card_discount(
+            item_prices_sum, payment_method
+        )
         pagarme_authorized_amount = payment.amount
-        if item_prices_sum > payment.amount:
+        if item_prices_sum_with_discount > payment.amount:
             raise PaymentViolation(
-                f'Valor autorizado {pagarme_authorized_amount} é menor que o esperado {item_prices_sum}'
+                f'Valor autorizado {pagarme_authorized_amount} é menor que o esperado {item_prices_sum_with_discount}'
             )
         if payment_config.max_installments < payment.installments:
             raise PaymentViolation(
                 f'Parcelamento em {payment.installments} vez(es) é maior que o máximo ' +
                 f'{payment_config.max_installments}'
             )
-        amount_after_interests = payment_config.calculate_amount(item_prices_sum, payment.installments)
+        amount_after_interests = payment_config.calculate_amount(item_prices_sum_with_discount, payment.installments)
         if payment.amount < (amount_after_interests - 1):
             raise PaymentViolation(
                 f'Parcelamento em {payment.installments} vez(es) com juros {payment_config.interest_rate}% '
